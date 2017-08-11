@@ -1,0 +1,6 @@
+{
+  "name": "react-native-permissions-web",
+  "version": "1.0.0",
+  "main": "index.web.js",
+  "license": "MIT"
+}
