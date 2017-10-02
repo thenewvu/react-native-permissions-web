@@ -1,27 +1,48 @@
 'use strict'
 
-const RNPTypes = ['location', 'camera', 'microphone', 'photo', 'contacts', 'event', 'reminder', 'bluetooth', 'notification', 'backgroundRefresh', 'speechRecognition']
+const RNPTypes = ['notification']
+
+const checker = {
+  notification () {
+    switch (Notification.permission) {
+      case 'granted':  return Promise.resolve('authorized')
+      case 'denied':  return Promise.resolve('denied')
+      default: return Promise.resolve('undetermined')
+    }
+  }
+}
+
+const requestor = {
+  async notification ()  {
+    const permission = await Notification.requestPermission()
+    switch (permission) {
+      case 'granted':  return Promise.resolve('authorized')
+      case 'denied':  return Promise.resolve('denied')
+      default: return Promise.resolve('undetermined')
+    }
+  }
+}
 
 module.exports = {
-  canOpenSettings() {
+  canOpenSettings () {
     return false
   },
 
-  openSettings() {},
+  openSettings () {},
 
-  getTypes() {
+  getTypes () {
     return RNPTypes
   },
 
-  check(permission, type) {
-    return Promise.resolve('authorized')
+  check (permission, type) {
+    return checker[permission]
+      ? checker[permission]()
+      : Promise.resolve('denied')
   },
 
-  request(permission, type) {
-    return Promise.resolve('authorized')
-  },
-
-  checkMultiple(permissions) {
-    return Promise.resolve(permissions.reduce((pre, cur) => ({ ...pre, [cur]: 'authorized' }), {}))
+  request (permission, type) {
+    return requestor[permission]
+      ? requestor[permission]()
+      : Promise.resolve('denied')
   }
 }
