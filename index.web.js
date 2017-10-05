@@ -1,25 +1,39 @@
 'use strict'
 
-const RNPTypes = ['notification']
+const RNPTypes = ['notification', 'microphone', 'camera']
+
+const notificationPermissionMap = p => {
+  switch (p) {
+    case 'granted': return 'authorized'
+    case 'denied': return 'denied'
+    default: return 'undetermined'
+  }
+}
 
 const checker = {
   notification () {
-    switch (Notification.permission) {
-      case 'granted':  return Promise.resolve('authorized')
-      case 'denied':  return Promise.resolve('denied')
-      default: return Promise.resolve('undetermined')
-    }
+    return notificationPermissionMap(
+      Notification.permission
+    )
   }
 }
 
 const requestor = {
-  async notification ()  {
-    const permission = await Notification.requestPermission()
-    switch (permission) {
-      case 'granted':  return Promise.resolve('authorized')
-      case 'denied':  return Promise.resolve('denied')
-      default: return Promise.resolve('undetermined')
-    }
+  notification ()  {
+    return Notification.requestPermission()
+      .then(notificationPermissionMap)
+  },
+  microphone () {
+    return navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then(() => 'authorized')
+      .catch(() => 'undetermined')
+  },
+  camera () {
+    return navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then(() => 'authorized')
+      .catch(() => 'undetermined')
   }
 }
 
@@ -28,7 +42,7 @@ module.exports = {
     return false
   },
 
-  openSettings () {},
+  openSettings () { },
 
   getTypes () {
     return RNPTypes
@@ -37,12 +51,16 @@ module.exports = {
   check (permission, type) {
     return checker[permission]
       ? checker[permission]()
-      : Promise.resolve('denied')
+      : Promise.reject(new Error(
+        `${permission} not supported`
+      ))
   },
 
   request (permission, type) {
     return requestor[permission]
       ? requestor[permission]()
-      : Promise.resolve('denied')
+      : Promise.reject(new Error(
+        `${permission} not supported`
+      ))
   }
 }
